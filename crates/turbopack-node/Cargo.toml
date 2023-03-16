@@ -11,6 +11,7 @@ bench = false
 
 [dependencies]
 anyhow = { workspace = true }
+bytes = { workspace = true }
 futures = { workspace = true }
 futures-retry = { workspace = true }
 indexmap = { workspace = true, features = ["serde"] }
