@@ -117,6 +117,8 @@ pub struct IssueSource<'a> {
 
 #[derive(Serialize)]
 pub struct Issue<'a> {
+    pub id: usize,
+
     pub severity: IssueSeverity,
     pub context: &'a str,
     pub category: &'a str,
@@ -143,6 +145,7 @@ impl<'a> From<&'a PlainIssue> for Issue<'a> {
         });
 
         Issue {
+            id: plain.id,
             severity: plain.severity,
             context: &plain.context,
             category: &plain.category,

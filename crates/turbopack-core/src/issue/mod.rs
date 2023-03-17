@@ -476,6 +476,8 @@ pub struct OptionIssueSource(Option<IssueSourceVc>);
 #[turbo_tasks::value(serialization = "none")]
 #[derive(Clone, Debug)]
 pub struct PlainIssue {
+    pub id: usize,
+
     pub severity: IssueSeverity,
     pub context: String,
     pub category: String,
@@ -537,6 +539,7 @@ impl IssueVc {
         processing_path: OptionIssueProcessingPathItemsVc,
     ) -> Result<PlainIssueVc> {
         Ok(PlainIssue {
+            id: *self.node.resolve().await?.get_task_id(),
             severity: *self.severity().await?,
             context: self.context().to_string().await?.clone_value(),
             category: self.category().await?.clone_value(),

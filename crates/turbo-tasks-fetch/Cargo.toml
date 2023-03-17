@@ -27,7 +27,7 @@ turbo-tasks-fs = { workspace = true }
 turbopack-core = { workspace = true }
 
 [dev-dependencies]
-httpmock = { workspace = true }
+httpmock = { workspace = true, default-features = false }
 tokio = { workspace = true, features = ["full"] }
 turbo-tasks-memory = { workspace = true }
 turbo-tasks-testing = { workspace = true }
