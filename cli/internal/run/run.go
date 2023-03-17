@@ -363,6 +363,7 @@ func (r *run) run(ctx gocontext.Context, targets []string) error {
 			globalHashable.globalCacheKey,
 			globalHashable.pipeline,
 		),
+		r.base.APIClient,
 	)
 
 	// Dry Run

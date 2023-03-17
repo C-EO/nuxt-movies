@@ -2,6 +2,7 @@
 package runsummary
 
 import (
+	"encoding/json"
 	"fmt"
 	"path/filepath"
 	"time"
@@ -9,6 +10,7 @@ import (
 	"github.com/mitchellh/cli"
 	"github.com/segmentio/ksuid"
 	"github.com/vercel/turbo/cli/internal/cache"
+	"github.com/vercel/turbo/cli/internal/client"
 	"github.com/vercel/turbo/cli/internal/fs"
 	"github.com/vercel/turbo/cli/internal/turbopath"
 	"github.com/vercel/turbo/cli/internal/util"
@@ -33,10 +35,18 @@ type RunSummary struct {
 	Packages          []string           `json:"packages"`
 	ExecutionSummary  *executionSummary  `json:"executionSummary"`
 	Tasks             []*TaskSummary     `json:"tasks"`
+	apiClient         *client.ApiClient  `json:"-"`
 }
 
 // NewRunSummary returns a RunSummary instance
-func NewRunSummary(startAt time.Time, profile string, turboVersion string, packages []string, globalHashSummary *GlobalHashSummary) *RunSummary {
+func NewRunSummary(
+	startAt time.Time,
+	profile string,
+	turboVersion string,
+	packages []string,
+	globalHashSummary *GlobalHashSummary,
+	apiClient *client.ApiClient,
+) *RunSummary {
 	executionSummary := newExecutionSummary(startAt, profile)
 
 	return &RunSummary{
@@ -47,6 +57,7 @@ func NewRunSummary(startAt time.Time, profile string, turboVersion string, packa
 		Packages:          packages,
 		Tasks:             []*TaskSummary{},
 		GlobalHashSummary: globalHashSummary,
+		apiClient:         apiClient,
 	}
 }
 
@@ -57,6 +68,14 @@ func (summary *RunSummary) Close(terminal cli.Ui) {
 	}
 
 	summary.printExecutionSummary(terminal)
+
+	summary.log()
+}
+
+func (summary *RunSummary) log() {
+	if body, err := json.Marshal(summary); err == nil {
+		summary.apiClient.RecordRunSummary(body)
+	}
 }
 
 // TrackTask makes it possible for the consumer to send information about the execution of a task.
