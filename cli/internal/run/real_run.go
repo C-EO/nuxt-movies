@@ -219,7 +219,9 @@ func (ec *execContext) exec(ctx gocontext.Context, packageTask *nodes.PackageTas
 		ErrorPrefix:  prettyPrefix,
 		WarnPrefix:   prettyPrefix,
 	}
-	hit, err := taskCache.RestoreOutputs(ctx, prefixedUI, progressLogger)
+	cacheStatus, err := taskCache.RestoreOutputs(ctx, prefixedUI, progressLogger)
+	hit := cacheStatus.Local || cacheStatus.Remote
+
 	if err != nil {
 		prefixedUI.Error(fmt.Sprintf("error fetching from cache: %s", err))
 	} else if hit {

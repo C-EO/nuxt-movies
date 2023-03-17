@@ -20,7 +20,7 @@ import (
 type Cache interface {
 	// Fetch returns true if there is a cache it. It is expected to move files
 	// into their correct position as a side effect
-	Fetch(anchor turbopath.AbsoluteSystemPath, hash string, files []string) (bool, []turbopath.AnchoredSystemPath, int, error)
+	Fetch(anchor turbopath.AbsoluteSystemPath, hash string, files []string) (ItemStatus, []turbopath.AnchoredSystemPath, int, error)
 	Exists(hash string) ItemStatus
 	// Put caches files for a given hash
 	Put(anchor turbopath.AbsoluteSystemPath, hash string, duration int, files []turbopath.AnchoredSystemPath) error
@@ -232,17 +232,18 @@ func (mplex *cacheMultiplexer) removeCache(removal *cacheRemoval) {
 	}
 }
 
-func (mplex *cacheMultiplexer) Fetch(anchor turbopath.AbsoluteSystemPath, key string, files []string) (bool, []turbopath.AnchoredSystemPath, int, error) {
+func (mplex *cacheMultiplexer) Fetch(anchor turbopath.AbsoluteSystemPath, key string, files []string) (ItemStatus, []turbopath.AnchoredSystemPath, int, error) {
 	// Make a shallow copy of the caches, since storeUntil can call removeCache
 	mplex.mu.RLock()
 	caches := make([]Cache, len(mplex.caches))
 	copy(caches, mplex.caches)
 	mplex.mu.RUnlock()
 
+	cacheState := ItemStatus{}
 	// Retrieve from caches sequentially; if we did them simultaneously we could
 	// easily write the same file from two goroutines at once.
 	for i, cache := range caches {
-		ok, actualFiles, duration, err := cache.Fetch(anchor, key, files)
+		itemStatus, actualFiles, duration, err := cache.Fetch(anchor, key, files)
 		if err != nil {
 			cd := &util.CacheDisabledError{}
 			if errors.As(err, &cd) {
@@ -256,16 +257,19 @@ func (mplex *cacheMultiplexer) Fetch(anchor turbopath.AbsoluteSystemPath, key st
 			// the operation. Future work that plumbs UI / Logging into the cache system
 			// should probably log this at least.
 		}
-		if ok {
+
+		if itemStatus.Local == true || itemStatus.Remote == true {
 			// Store this into other caches. We can ignore errors here because we know
 			// we have previously successfully stored in a higher-priority cache, and so the overall
 			// result is a success at fetching. Storing in lower-priority caches is an optimization.
 			_ = mplex.storeUntil(anchor, key, duration, actualFiles, i)
-			return ok, actualFiles, duration, err
+			cacheState.Local = cacheState.Local || itemStatus.Local
+			cacheState.Remote = cacheState.Remote || itemStatus.Remote
+			return cacheState, actualFiles, duration, err
 		}
 	}
 
-	return false, nil, 0, nil
+	return ItemStatus{Local: false, Remote: false}, nil, 0, nil
 }
 
 func (mplex *cacheMultiplexer) Exists(target string) ItemStatus {
