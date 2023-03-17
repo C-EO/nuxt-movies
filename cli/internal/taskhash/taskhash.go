@@ -435,9 +435,9 @@ func (th *Tracker) SetCacheStatus(taskID string, cacheStatus cache.ItemStatus) {
 func (th *Tracker) GetCacheStatus(taskID string) cache.ItemStatus {
 	th.mu.Lock()
 	defer th.mu.Unlock()
-	if status, ok := th.packageTaskCacheStatus[taskID]; !ok {
+	status, ok := th.packageTaskCacheStatus[taskID]
+	if !ok {
 		return cache.ItemStatus{Local: false, Remote: false}
-	} else {
-		return status
 	}
+	return status
 }
