@@ -106,6 +106,7 @@ func RealRun(
 		}
 		taskSummary.Execution = taskExecutionSummary
 		taskSummary.ExpandedOutputs = taskHashTracker.GetExpandedOutputs(taskSummary.TaskID)
+		taskSummary.CacheState = taskHashTracker.GetCacheStatus(taskSummary.TaskID)
 		return nil
 	}
 
